@@ -5,6 +5,7 @@ import connectDB from './config/mongodb.js';
 import instituteUserRoute from './routes/instituteUserRoute.js'
 import upload from './middleware/multer.js';
 
+
 // App config
 const app = express();
 const port = process.env.PORT || 4000;

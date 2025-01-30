@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { assets } from '../assets/assets.js';
+import { InstituteContext } from '../context/IsntituteContext';
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
+    const { value } = useContext(InstituteContext);
+    const { loginInstituteUser, registerInstitute, navigate } = value;
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const [isSignIn, setIsSignIn] = useState(false); // New state to toggle between sign up and sign in
+    const [currentState, setCurrentState] = useState("LOGIN"); // "LOGIN" or "SIGNUP"
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
 
     // Toggle password visibility
     const togglePasswordVisibility = () => {
@@ -12,7 +20,29 @@ const Login = () => {
 
     // Toggle between Sign In and Sign Up
     const toggleSignInSignUp = () => {
-        setIsSignIn((prev) => !prev);
+        setCurrentState((prev) => (prev === "LOGIN" ? "SIGNUP" : "LOGIN"));
+    };
+
+    // Handle login
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (currentState === "LOGIN") {
+            try {
+                await loginInstituteUser(email, password);
+                toast.success("Login successful!");
+            } catch (error) {
+                toast.error(error.error || "Login failed");
+            }
+        } else {
+            try {
+                await registerInstitute(name, email, password);
+                toast.success("Registration successful!");
+                navigate('/complete-profile')
+                
+            } catch (error) {
+                toast.error(error.error || "Registration failed");
+            }
+        }
     };
 
     return (
@@ -33,21 +63,23 @@ const Login = () => {
                         <h1 className="text-4xl font-semibold text-gray-800 mb-4">
                             QUEUES
                         </h1>
-                        <p>{isSignIn ? 'Welcome back! to Queues' : 'Welcome to Queues'}</p>
+                        <p>{currentState === "LOGIN" ? 'Welcome back! to Queues' : 'Welcome to Queues'}</p>
 
                         {/* Form */}
-                        <form className="space-y-4 ">
+                        <form className="space-y-4" onSubmit={handleSubmit}>
                             {/* Name Input - Only show when Sign Up */}
-                            {!isSignIn && (
-                                <div>
-                                    <label htmlFor="fullName" className="block text-gray-700 mb-1">Full Name</label>
-                                    <input
-                                        id="fullName"
-                                        type="text"
-                                        placeholder="Full Name"
-                                        className="w-full p-2.5 bg-[#F3F4F6] border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-black transition duration-300 ease-in-out transform hover:scale-105"
-                                    />
-                                </div>
+                            {currentState === "SIGNUP" && (
+                               <div>
+                               <label htmlFor="fullName" className="block text-gray-700 mb-1">Full Name</label>
+                               <input
+                                   id="fullName"
+                                   type="text"
+                                   placeholder="Full Name"
+                                   value={name}
+                                   onChange={(e) => setName(e.target.value)}
+                                   className="w-full p-2.5 bg-[#F3F4F6] border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-black transition duration-300 ease-in-out transform hover:scale-105"
+                               />
+                           </div>
                             )}
 
                             {/* Email Input */}
@@ -57,6 +89,8 @@ const Login = () => {
                                     id="email"
                                     type="email"
                                     placeholder="Email Address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="w-full p-2.5 bg-[#F3F4F6] border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-black transition duration-300 ease-in-out transform hover:scale-105"
                                 />
                             </div>
@@ -68,6 +102,8 @@ const Login = () => {
                                     id="password"
                                     type={isPasswordVisible ? "text" : "password"}
                                     placeholder="Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     className="w-full p-2.5 bg-[#F3F4F6] border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-black transition duration-300 ease-in-out transform hover:scale-105"
                                 />
                                 <i
@@ -76,12 +112,12 @@ const Login = () => {
                                 ></i>
                             </div>
 
-                            {/* Login Button */}
+                            {/* Login/Register Button */}
                             <button
                                 type="submit"
                                 className="w-full p-2.5 bg-black text-white rounded-xl shadow-md hover:bg-[#2B2B2B] focus:outline-none transition duration-300 ease-in-out transform hover:scale-105"
                             >
-                                {isSignIn ? 'Login' : 'Sign Up'}
+                                {currentState === "LOGIN" ? 'Login' : 'Sign Up'}
                             </button>
 
                             {/* Or Divider with text */}
@@ -103,10 +139,10 @@ const Login = () => {
                             {/* Already a user? Sign in text */}
                             <div className="text-center text-sm mt-4">
                                 <span className="text-black cursor-pointer" onClick={toggleSignInSignUp}>
-                                    {isSignIn ? 'New to Queues?' : 'Already a user?'}
+                                    {currentState === "LOGIN" ? 'New to Queues?' : 'Already a user?'}
                                 </span>
                                 <span className="text-gray-600 cursor-pointer ml-1">
-                                    {isSignIn ? 'Sign in' : 'Sign up'}
+                                    {currentState === "LOGIN" ? 'Sign up' : 'Sign in'}
                                 </span>
                             </div>
                         </form>

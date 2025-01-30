@@ -3,15 +3,61 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+
+
+
 // Function to create a JWT token
 const createToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET);
 };
 
+//Function to login
+const loginInstituteUser = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Validation: Check if email and password are provided
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
+        }
+
+        // Find the user by email
+        const user = await instituteUserModel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if the provided password matches the stored hashed password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: "Invalid email or password" });
+        }
+
+        // Create a JWT token
+        const token = createToken(user._id);
+
+        // Respond with the user information and token
+        res.status(200).json({
+            message: "Login successful",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                isProfileComplete: user.isProfileComplete,
+            },
+            token,
+        });
+    } catch (error) {
+        console.error("Error logging in user:", error);
+        res.status(500).json({ error: "An error occurred while logging in" });
+    }
+};
+
+
 // Register institute function
 const registerInstitute = async (req, res) => {
     const { name, email, password } = req.body; // Collect only basic fields
-
+    //console.log(req.body)
     try {
         // Validation: Check if all required fields are provided
         if (!name || !email || !password) {
@@ -128,5 +174,5 @@ const completeProfile = async (req, res) => {
     }
 };
 
-export { registerInstitute, completeProfile };
+export { registerInstitute, completeProfile, loginInstituteUser };
 
