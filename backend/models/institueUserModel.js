@@ -7,6 +7,10 @@ const instituteUserSchema = new mongoose.Schema({
     address: { type: String },
     zipcode: { type: String },
     phonenumber: { type: String },
+    type:{type: String},
+    streetAddress:{type:String},
+    city:{type:String},
+    state:{type:String},
     isProfileComplete: { type: Boolean, default: false }, // Flag to track profile completion
 });
 

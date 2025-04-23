@@ -5,8 +5,7 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
-    const { value } = useContext(InstituteContext);
-    const { loginInstituteUser, registerInstitute, navigate } = value;
+    const { loginInstituteUser, registerInstitute, navigate } = useContext(InstituteContext);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [currentState, setCurrentState] = useState("LOGIN"); // "LOGIN" or "SIGNUP"
     const [email, setEmail] = useState("");
@@ -30,6 +29,7 @@ const Login = () => {
             try {
                 await loginInstituteUser(email, password);
                 toast.success("Login successful!");
+                navigate('/complete-profile'); // Navigate after login
             } catch (error) {
                 toast.error(error.error || "Login failed");
             }
@@ -37,8 +37,7 @@ const Login = () => {
             try {
                 await registerInstitute(name, email, password);
                 toast.success("Registration successful!");
-                navigate('/complete-profile')
-                
+                navigate('/complete-profile'); // Navigate after registration
             } catch (error) {
                 toast.error(error.error || "Registration failed");
             }
@@ -69,17 +68,17 @@ const Login = () => {
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             {/* Name Input - Only show when Sign Up */}
                             {currentState === "SIGNUP" && (
-                               <div>
-                               <label htmlFor="fullName" className="block text-gray-700 mb-1">Full Name</label>
-                               <input
-                                   id="fullName"
-                                   type="text"
-                                   placeholder="Full Name"
-                                   value={name}
-                                   onChange={(e) => setName(e.target.value)}
-                                   className="w-full p-2.5 bg-[#F3F4F6] border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-black transition duration-300 ease-in-out transform hover:scale-105"
-                               />
-                           </div>
+                                <div>
+                                    <label htmlFor="fullName" className="block text-gray-700 mb-1">Full Name</label>
+                                    <input
+                                        id="fullName"
+                                        type="text"
+                                        placeholder="Full Name"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full p-2.5 bg-[#F3F4F6] border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-black transition duration-300 ease-in-out transform hover:scale-105"
+                                    />
+                                </div>
                             )}
 
                             {/* Email Input */}
@@ -115,7 +114,7 @@ const Login = () => {
                             {/* Login/Register Button */}
                             <button
                                 type="submit"
-                                className="w-full p-2.5 bg-black text-white rounded-xl shadow-md hover:bg-[#2B2B2B] focus:outline-none transition duration-300 ease-in-out transform hover:scale-105"
+                                className="w-full p-2.5 bg-gray-700 text-white rounded-xl shadow-md hover:bg-[#333333] focus:outline-none transition duration-300 ease-in-out transform hover:scale-105"
                             >
                                 {currentState === "LOGIN" ? 'Login' : 'Sign Up'}
                             </button>

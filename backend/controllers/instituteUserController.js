@@ -116,63 +116,130 @@ const registerInstitute = async (req, res) => {
 };
 
 const completeProfile = async (req, res) => {
-    // Get the token from the Authorization header
-    const token = req.headers.authorization?.split(" ")[1]; // Expecting "Bearer <token>"
-
-    // Check if the token exists
-    if (!token) {
-        return res.status(401).json({ error: "Authorization token is required" });
-    }
-
     try {
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const userId = decoded.id; // Extract user ID from the token payload
+        const userId = req.userId; // This is set by authenticateUser middleware
 
-        const { address, zipcode, phonenumber } = req.body;
+        const { zipcode, phonenumber, type, streetAddress, city, state } = req.body;
 
         // Validation: Check if all required fields are provided
-        if (!address || !zipcode || !phonenumber) {
-            return res.status(400).json({ error: "Address, zipcode, and phone number are required" });
+        if (!zipcode || !phonenumber || !type || !streetAddress || !city || !state) {
+            return res.status(400).json({
+                error: "All fields are required: zipcode, phone number, type, street address, city, state",
+            });
         }
 
-        // Update the user's profile
+        // Update user profile
         const updatedUser = await instituteUserModel.findByIdAndUpdate(
-            userId, // Use the user ID from the token
-            { address, zipcode, phonenumber, isProfileComplete: true },
-            { new: true } // Return the updated user document
+            userId,
+            { zipcode, phonenumber, type, streetAddress, city, state, isProfileComplete: true },
+            { new: true }
         );
 
-        // If user is not found
         if (!updatedUser) {
             return res.status(404).json({ error: "User not found" });
         }
 
         // Respond with success
-        res.status(200).json({
+        return res.status(200).json({
             message: "Profile updated successfully",
-            user: {
-                id: updatedUser._id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                address: updatedUser.address,
-                zipcode: updatedUser.zipcode,
-                phonenumber: updatedUser.phonenumber,
-                isProfileComplete: updatedUser.isProfileComplete,
-            },
+            user: updatedUser, // Return updated user object
         });
     } catch (error) {
         console.error("Error completing profile:", error);
+        return res.status(500).json({ error: "An error occurred while updating the profile" });
+    }
+};
 
-        // Handle invalid or expired tokens
+
+const showdataEmailName = async (req, res) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+        return res.status(401).json({ error: "Authorization token is required" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id; // Extract userId from token
+
+        //  Fetch the specific user by ID
+        const user = await instituteUserModel.findById(userId).select("name email");
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User fetched successfully",
+            user, // Now correctly returning a single object
+        });
+    } catch (error) {
+        console.error("Error fetching user data:", error);
+
         if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
             return res.status(401).json({ error: "Invalid or expired token" });
         }
 
-        // Handle other errors
+        res.status(500).json({ error: "An error occurred while fetching user data" });
+    }
+};
+
+
+const showDataExceptEmailName = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1]; // Expecting "Bearer <token>"
+        if (!token) {
+            return res.status(401).json({ error: "Authorization token is required" });
+        }
+
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
+        // Fetch user data excluding name and email
+        const user = await instituteUserModel.findById(userId).select("-name -email");
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User data fetched successfully",
+            user,
+        });
+    } catch (error) {
+        console.error("Error fetching user data:", error);
+        res.status(500).json({ error: "An error occurred while fetching user data" });
+    }
+};
+
+// Function to update user profile except name and email
+const updateProfileExceptEmailName = async (req, res) => {
+    try {
+        const userId = req.userId; // Retrieved from authentication middleware
+        const { zipcode, phonenumber, type, streetAddress, city, state } = req.body;
+
+        // Update user profile excluding name and email
+        const updatedUser = await instituteUserModel.findByIdAndUpdate(
+            userId,
+            { zipcode, phonenumber, type, streetAddress, city, state },
+            { new: true, select: "-name -email" } // Exclude name and email from response
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: updatedUser,
+        });
+    } catch (error) {
+        console.error("Error updating user profile:", error);
         res.status(500).json({ error: "An error occurred while updating the profile" });
     }
 };
 
-export { registerInstitute, completeProfile, loginInstituteUser };
+
+
+export { registerInstitute, completeProfile, loginInstituteUser, showdataEmailName, showDataExceptEmailName, updateProfileExceptEmailName };
 
