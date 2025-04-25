@@ -5,6 +5,7 @@ import connectDB from './config/mongodb.js';
 import instituteUserRoute from './routes/instituteUserRoute.js'
 import userRoute from './routes/userRoute.js'
 import upload from './middleware/multer.js';
+import queueRoutes from './routes/queueRoutes.js'
 
 
 // App config
@@ -24,6 +25,7 @@ app.use(cors());
 // Use the imported routes for /api paths (or whatever your API prefix is)
 app.use('/api/institute', instituteUserRoute); // This will handle routes like /api/register, /api/completeProfile, etc.
 app.use('/api/user', userRoute)
+app.use('/api/queue', queueRoutes)
 
 // API endpoints
 app.get('/', (req, res) => {

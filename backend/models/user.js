@@ -19,15 +19,18 @@ const userSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        enum: ["Male", "Female", "Transgender"],
-        required: true
+        //enum: ["Male", "Female", "Transgender"],
+        required: false
     },
     zipcode: {
         type: String,
-        required: true
-    }
+        required: false
+    },
+    isProfileComplete: { type: Boolean, default: false },
 }, { timestamps: true });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+
+
 
 export default User;

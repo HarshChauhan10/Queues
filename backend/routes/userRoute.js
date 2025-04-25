@@ -2,24 +2,32 @@ import express from 'express';
 import {
     registerUser,
     loginUser,
-    getUserData,
-    updateUserData
+    completeUserProfile,
+    getNameAndEmail,
+    getProfileExceptNameEmail,
+    updateProfileExceptNameEmail,
 } from '../controllers/userController.js';
 
 import authenticateUser from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Route to register a new user
+// 🔐 Register a new user
 router.post('/register', registerUser);
 
-// Route to log in a user
+// 🔓 Log in an existing user
 router.post('/login', loginUser);
 
-// Route to get full user data (protected)
-router.get('/profile', authenticateUser, getUserData);
+// ✅ Complete user profile (gender + zipcode)
+router.post('/complete-profile', authenticateUser, completeUserProfile);
 
-// Route to update user data (protected)
-router.put('/update-profile', authenticateUser, updateUserData);
+// 👀 Get only name & email
+router.get('/name-email', authenticateUser, getNameAndEmail);
+
+// 📦 Get rest of profile (except name, email, password)
+router.get('/profile', authenticateUser, getProfileExceptNameEmail);
+
+// ✏️ Update profile (excluding name/email/password)
+router.put('/update-profile', authenticateUser, updateProfileExceptNameEmail);
 
 export default router;
