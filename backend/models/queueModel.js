@@ -1,4 +1,3 @@
-// models/Queue.js
 import mongoose from "mongoose";
 
 const queueSchema = new mongoose.Schema({
@@ -20,6 +19,15 @@ const queueSchema = new mongoose.Schema({
     joinedAt: {
         type: Date,
         default: Date.now
+    },
+    status: {
+        type: String,
+        enum: ["active", "completed", "removed"],
+        default: "active"
+    },
+    movedToEnd: {
+        type: Boolean,
+        default: false
     }
 });
 

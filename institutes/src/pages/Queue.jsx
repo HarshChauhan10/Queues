@@ -14,7 +14,7 @@ const Queue = () => {
             <div className="flex items-center space-x-8">
                 <img src={assets.Counter} alt="Counter" className="w-90 h-90" />
                 <img src={assets.Male} alt="Male User" className="w-80 h-80" />
-                <img src={assets.Female} alt="Female User" className="w-80 h-80" />
+                <img src={assets.Female} alt="Female User" className="w-90 h-90" />
             </div>
         </div>
     );

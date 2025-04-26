@@ -102,38 +102,6 @@ const UserProvider = ({ children }) => {
             throw err;
         }
     };
-    // 📥 Join queue
-    const joinQueue = async (instituteId) => {
-        try {
-            const res = await axios.post(
-                `${BASE_URL}/api/queue/join/${instituteId}`,
-                {},
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            return res.data;
-        } catch (err) {
-            console.error("Join queue error:", err.response?.data || err.message);
-            throw err;
-        }
-    };
-
-    // 🚪 Leave queue
-    const leaveQueue = async (instituteId) => {
-        try {
-            const res = await axios.delete(
-                `${BASE_URL}/api/queue/leave/${instituteId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            return res.data;
-        } catch (err) {
-            console.error("Leave queue error:", err.response?.data || err.message);
-            throw err;
-        }
-    };
 
 
     // 🚪 Logout
@@ -162,8 +130,6 @@ const UserProvider = ({ children }) => {
                 fetchUserProfile,
                 updateProfile,
                 logout,
-                joinQueue,
-                leaveQueue,
             }}
         >
             {children}

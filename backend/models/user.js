@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        //enum: ["Male", "Female", "Transgender"],
+        enum: ["Male", "Female", "Others"],
         required: false
     },
     zipcode: {
@@ -30,7 +30,5 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
-
-
 
 export default User;

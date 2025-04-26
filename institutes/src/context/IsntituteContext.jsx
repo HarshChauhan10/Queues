@@ -145,43 +145,6 @@ const InstituteContextProvider = ({ children }) => {
     }
   }, [authToken]);
 
-  // Get all institutes with queue counts
-  const fetchInstitutesWithQueueCount = async () => {
-    try {
-      const res = await axios.get(`${backendUrl}/api/queue/institutes`);
-      return res.data;
-    } catch (err) {
-      console.error("Fetch institutes queue error:", err.response?.data || err.message);
-      throw err;
-    }
-  };
-
-  // Get stats for current institute
-  const fetchQueueStats = async (instituteId) => {
-    try {
-      const res = await axios.get(`${backendUrl}/api/queue/stats/${instituteId}`);
-      return res.data;
-    } catch (err) {
-      console.error("Fetch queue stats error:", err.response?.data || err.message);
-      throw err;
-    }
-  };
-
-  // Remove user from queue (admin)
-  const removeUserFromQueue = async (instituteId, userId) => {
-    try {
-      const res = await axios.delete(
-        `${backendUrl}/api/queue/remove/${instituteId}/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      return res.data;
-    } catch (err) {
-      console.error("Remove user from queue error:", err.response?.data || err.message);
-      throw err;
-    }
-  };
 
   const value = {
     user,
@@ -193,9 +156,7 @@ const InstituteContextProvider = ({ children }) => {
     showdataEmailName,
     showDataExceptEmailName,
     updateProfileExceptEmailName,
-    fetchInstitutesWithQueueCount,
-    fetchQueueStats,
-    removeUserFromQueue,
+
   };
 
   return <InstituteContext.Provider value={value}>{children}</InstituteContext.Provider>;

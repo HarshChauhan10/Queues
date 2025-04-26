@@ -7,11 +7,20 @@ const instituteUserSchema = new mongoose.Schema({
     address: { type: String },
     zipcode: { type: String },
     phonenumber: { type: String },
-    type:{type: String},
-    streetAddress:{type:String},
-    city:{type:String},
-    state:{type:String},
+    type: { type: String },
+    streetAddress: { type: String },
+    city: { type: String },
+    state: { type: String },
     isProfileComplete: { type: Boolean, default: false }, // Flag to track profile completion
+
+    // NEW FIELDS
+    approxTimePerPerson: { type: Number, default: 5 }, // Time in minutes per person
+    queueStats: { // Optional caching
+        total: { type: Number, default: 0 },
+        male: { type: Number, default: 0 },
+        female: { type: Number, default: 0 },
+        others: { type: Number, default: 0 }
+    }
 });
 
 const instituteUserModel = mongoose.models.instituteUser || mongoose.model("instituteUser", instituteUserSchema);
