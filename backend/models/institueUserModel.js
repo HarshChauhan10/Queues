@@ -20,7 +20,16 @@ const instituteUserSchema = new mongoose.Schema({
         male: { type: Number, default: 0 },
         female: { type: Number, default: 0 },
         others: { type: Number, default: 0 }
-    }
+    },
+    startTime: {
+        type: Date, // The time when users can start joining the queue
+        required: false
+    },
+    endTime: {
+        type: Date, // The time when users can no longer join the queue
+        required: false
+    },
+
 });
 
 const instituteUserModel = mongoose.models.instituteUser || mongoose.model("instituteUser", instituteUserSchema);

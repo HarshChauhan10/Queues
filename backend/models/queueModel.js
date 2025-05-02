@@ -25,10 +25,23 @@ const queueSchema = new mongoose.Schema({
         enum: ["active", "completed", "removed"],
         default: "active"
     },
-    movedToEnd: {
-        type: Boolean,
-        default: false
-    }
+    movedToEndCount: {
+        type: Number,
+        default: 0
+    },
+    userStatus: {
+        type: String,
+        enum: ["joined", "left", "removed"],
+        default: "joined" // To track the user's current participation status
+    },
+    windowStartTime: {
+        type: Date,
+        required: false
+    },
+    windowEndTime: {
+        type: Date,
+        required: false
+    },
 });
 
 const Queue = mongoose.models.Queue || mongoose.model("Queue", queueSchema);

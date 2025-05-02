@@ -102,28 +102,59 @@ const completeProfile = async (req, res) => {
     try {
         const userId = req.userId; // From authenticate middleware
 
-        const { zipcode, phonenumber, type, streetAddress, city, state, approxTimePerPerson } = req.body;
+        // Log the incoming request body to check for any issues
+        console.log("Request Body:", req.body);
 
-        // Validation: Every field must be present
-        if (
-            !zipcode ||
-            !phonenumber ||
-            !type ||
-            !streetAddress ||
-            !city ||
-            !state ||
-            approxTimePerPerson === undefined
-        ) {
+        const {
+            zipcode,
+            phonenumber,
+            type,
+            streetAddress,
+            city,
+            state,
+            approxTimePerPerson,
+            startTime,
+            endTime
+        } = req.body;
+
+        // Validate required fields
+        if (!zipcode || !phonenumber || !type || !streetAddress || !city || !state || approxTimePerPerson === undefined || !startTime || !endTime) {
             return res.status(400).json({
-                error: "All fields are required: zipcode, phonenumber, type, streetAddress, city, state, approxTimePerPerson",
+                error: "All fields are required: zipcode, phonenumber, type, streetAddress, city, state, approxTimePerPerson, startTime, endTime",
             });
         }
 
-        // Additional validation: approxTimePerPerson must be a positive number
+        // Additional validation
         if (typeof approxTimePerPerson !== "number" || approxTimePerPerson <= 0) {
             return res.status(400).json({ error: "approxTimePerPerson must be a positive number" });
         }
 
+        // Validate start and end times
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        if (isNaN(start) || isNaN(end)) {
+            return res.status(400).json({ error: "Invalid date format for startTime or endTime" });
+        }
+
+        if (start >= end) {
+            return res.status(400).json({ error: "startTime must be before endTime" });
+        }
+
+        // Log the validated data
+        console.log("Validated Data:", {
+            zipcode,
+            phonenumber,
+            type,
+            streetAddress,
+            city,
+            state,
+            approxTimePerPerson,
+            startTime,
+            endTime
+        });
+
+        // Update user
         const updatedUser = await instituteUserModel.findByIdAndUpdate(
             userId,
             {
@@ -134,6 +165,8 @@ const completeProfile = async (req, res) => {
                 city,
                 state,
                 approxTimePerPerson,
+                startTime,
+                endTime,
                 isProfileComplete: true,
             },
             { new: true }
@@ -207,34 +240,59 @@ const showDataExceptEmailName = async (req, res) => {
         res.status(500).json({ error: "An error occurred while fetching user data" });
     }
 };
-
-// Update profile except name and email
 const updateProfileExceptEmailName = async (req, res) => {
     try {
         const userId = req.userId;
-        const { zipcode, phonenumber, type, streetAddress, city, state, approxTimePerPerson } = req.body;
+        const {
+            zipcode,
+            phonenumber,
+            type,
+            streetAddress,
+            city,
+            state,
+            approxTimePerPerson,
+            startTime,
+            endTime
+        } = req.body;
 
-        if (
-            !zipcode ||
-            !phonenumber ||
-            !type ||
-            !streetAddress ||
-            !city ||
-            !state ||
-            approxTimePerPerson === undefined
-        ) {
-            return res.status(400).json({ error: "All fields are required for updating profile" });
+        // Initialize an object to hold the update data
+        const updateData = {};
+
+        // Check each field and only add it to the update data if it's provided
+        if (zipcode) updateData.zipcode = zipcode;
+        if (phonenumber) updateData.phonenumber = phonenumber;
+        if (type) updateData.type = type;
+        if (streetAddress) updateData.streetAddress = streetAddress;
+        if (city) updateData.city = city;
+        if (state) updateData.state = state;
+        if (approxTimePerPerson !== undefined) {
+            if (typeof approxTimePerPerson !== "number" || approxTimePerPerson <= 0) {
+                return res.status(400).json({ error: "approxTimePerPerson must be a positive number" });
+            }
+            updateData.approxTimePerPerson = approxTimePerPerson;
+        }
+        if (startTime) {
+            const startDate = new Date(startTime);
+            if (isNaN(startDate)) {
+                return res.status(400).json({ error: "Invalid date format for startTime" });
+            }
+            updateData.startTime = startDate;
+        }
+        if (endTime) {
+            const endDate = new Date(endTime);
+            if (isNaN(endDate)) {
+                return res.status(400).json({ error: "Invalid date format for endTime" });
+            }
+            updateData.endTime = endDate;
         }
 
-        if (typeof approxTimePerPerson !== "number" || approxTimePerPerson <= 0) {
-            return res.status(400).json({ error: "approxTimePerPerson must be a positive number" });
+        // If no fields to update, return an error
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ error: "At least one field must be provided for update" });
         }
 
-        const updatedUser = await instituteUserModel.findByIdAndUpdate(
-            userId,
-            { zipcode, phonenumber, type, streetAddress, city, state, approxTimePerPerson },
-            { new: true, select: "-name -email" }
-        );
+        // Perform the update operation
+        const updatedUser = await instituteUserModel.findByIdAndUpdate(userId, updateData, { new: true, select: "-name -email" });
 
         if (!updatedUser) {
             return res.status(404).json({ error: "User not found" });
@@ -249,6 +307,7 @@ const updateProfileExceptEmailName = async (req, res) => {
         res.status(500).json({ error: "An error occurred while updating the profile" });
     }
 };
+
 const updateApproxTimePerPerson = async (req, res) => {
     try {
         const userId = req.userId;
@@ -283,6 +342,29 @@ const updateApproxTimePerPerson = async (req, res) => {
     }
 };
 
+const getInstituteDetails = async (req, res) => {
+    const { instituteId } = req.params;
+
+    try {
+        const institute = await instituteUserModel.findById(instituteId);
+        if (!institute) {
+            return res.status(404).json({ error: "Institute not found" });
+        }
+
+        res.status(200).json({
+            message: "Institute details fetched successfully",
+            institute: {
+                name: institute.name,
+                startTime: institute.startTime,
+                endTime: institute.endTime
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching institute details:", error);
+        res.status(500).json({ error: "An error occurred while fetching the institute details" });
+    }
+};
+
 
 export {
     registerInstitute,
@@ -292,4 +374,5 @@ export {
     showDataExceptEmailName,
     updateProfileExceptEmailName,
     updateApproxTimePerPerson,
+    getInstituteDetails,
 };

@@ -20,10 +20,9 @@ const App = () => {
         {/* Main Content Area */}
         <div className="flex-1 p-10">
           <Routes>
-            <Route path='/' element={<Login />} />
+            <Route path='/' element={<Login />} /> {/* Login Route */}
             <Route path='/complete-profile' element={<CompleteProfile />} />
-            <Route path='/queue' element={<Queue />} />
-            {/* Add additional routes here as needed */}
+            <Route path='/queue' element={<Queue />} /> {/* Queue Route */}
           </Routes>
         </div>
       </div>

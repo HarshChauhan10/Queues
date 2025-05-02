@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback } from "react";
+import { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -6,160 +6,184 @@ export const InstituteContext = createContext();
 
 const InstituteContextProvider = ({ children }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const [user, setUser] = useState(null);
-  const [authToken, setAuthToken] = useState(localStorage.getItem("authToken") || null);
   const navigate = useNavigate();
 
-  // Persist authToken from localStorage
+  const [user, setUser] = useState(null);
+  const [authToken, setAuthToken] = useState(localStorage.getItem("authToken") || null);
+  const [loading, setLoading] = useState(true); // Prevent premature redirects
+
+  const isTokenExpired = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000; // ms
+      return expirationTime < Date.now();
+    } catch (error) {
+      console.error("Error parsing token:", error);
+      return true;
+    }
+  };
+
   useEffect(() => {
     const storedToken = localStorage.getItem("authToken");
-    if (storedToken) {
-      setAuthToken(storedToken);
-    }
-  }, []);
 
-  // Register a new institute
+    if (storedToken && !isTokenExpired(storedToken)) {
+      setAuthToken(storedToken);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+
+      axios.get(`${backendUrl}/api/institute/name-email`)
+        .then((res) => {
+          setUser(res.data.user);
+        })
+        .catch((error) => {
+          console.error("Token error:", error);
+          setAuthToken(null);
+          localStorage.removeItem("authToken");
+          navigate("/");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      // Token is missing or expired
+      setAuthToken(null);
+      localStorage.removeItem("authToken");
+      navigate("/");
+      setLoading(false);
+    }
+  }, [backendUrl, navigate]);
+
+  useEffect(() => {
+    if (authToken) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+  }, [authToken]);
+
   const registerInstitute = async (name, email, password) => {
     try {
-      const response = await axios.post(`${backendUrl}/api/institute/register`, {
+      const res = await axios.post(`${backendUrl}/api/institute/register`, {
         name,
         email,
         password,
       });
 
-      setUser(response.data.user);
-      setAuthToken(response.data.token);
-      localStorage.setItem("authToken", response.data.token);
+      const { token, user } = res.data;
 
-      return response.data;
+      setUser(user);
+      setAuthToken(token);
+      localStorage.setItem("authToken", token);
+      navigate('/complete-profile');
+
+      return res.data;
     } catch (error) {
-      console.error("Error registering institute:", error.response?.data || error.message);
+      console.error("Registration error:", error.response?.data || error.message);
       throw error.response?.data || { error: "Registration failed" };
     }
   };
 
-  // Login institute
   const loginInstituteUser = async (email, password) => {
     try {
-      const response = await axios.post(`${backendUrl}/api/institute/login`, {
+      const res = await axios.post(`${backendUrl}/api/institute/login`, {
         email,
         password,
       });
 
-      setUser(response.data.user);
-      setAuthToken(response.data.token);
-      localStorage.setItem("authToken", response.data.token);
+      const { token, user } = res.data;
 
-      return response.data;
+      setUser(user);
+      setAuthToken(token);
+      localStorage.setItem("authToken", token);
+      navigate('/complete-profile');
+
+      return res.data;
     } catch (error) {
-      console.error("Error logging in:", error.response?.data || error.message);
+      console.error("Login error:", error.response?.data || error.message);
       throw error.response?.data || { error: "Login failed" };
     }
   };
 
-  // Complete institute profile
-  const completeProfile = async (streetAddress, zipcode, phonenumber, type, city, state) => {
+  const completeProfile = async (profileData) => {
     try {
-      if (!authToken) throw new Error("Authorization token is missing");
-
-      const response = await axios.post(
-        `${backendUrl}/api/institute/completeProfile`,
-        { streetAddress, zipcode, phonenumber, type, city, state },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      return response.data;
+      const res = await axios.post(`${backendUrl}/api/institute/complete-profile`, profileData);
+      setUser(res.data.user);
+      return res.data;
     } catch (error) {
-      console.error("Error completing profile:", error.response?.data || error.message);
-      throw error.response?.data || { error: "Profile update failed" };
+      console.error("Profile completion error:", error.response?.data || error.message);
+      throw error.response?.data || { error: "An error occurred while completing the profile" };
     }
   };
 
-  // Fetch email and name
-  const showdataEmailName = useCallback(async () => {
-    try {
-      if (!authToken) throw { error: "Authorization token is missing" };
-
-      const response = await axios.get(`${backendUrl}/api/institute/email-name`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-
-      if (!response.data.user) return null;
-
-      setUser(response.data.user);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching user data:", error.response?.data || error.message);
-      throw error.response?.data || { error: "Failed to fetch user data" };
+  const getEmailAndName = async () => {
+    if (!authToken) {
+      navigate("/");
+      return;
     }
-  }, [authToken]);
-
-  // Fetch data excluding email & name
-  const showDataExceptEmailName = useCallback(async () => {
     try {
-      if (!authToken) throw { error: "Authorization token is missing" };
-
-      const response = await axios.get(`${backendUrl}/api/institute/data-except-email-name`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-
-      if (!response.data.user) return null;
-
-      return response.data.user;
+      const res = await axios.get(`${backendUrl}/api/institute/name-email`);
+      return res.data.user;
     } catch (error) {
-      console.error("Error fetching user data:", error.response?.data || error.message);
-      throw error.response?.data || { error: "Failed to fetch user data" };
+      console.error("Fetch email/name error:", error.response?.data || error.message);
+      throw error.response?.data || { error: "Error fetching user data" };
     }
-  }, [authToken]);
-
-  // Update data excluding email & name
-  const updateProfileExceptEmailName = useCallback(async (updatedData) => {
-    try {
-      if (!authToken) throw { error: "Authorization token is missing" };
-
-      const response = await axios.put(
-        `${backendUrl}/api/institute/update-profile`,
-        updatedData,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      setUser((prevUser) => ({
-        ...prevUser,
-        ...updatedData,
-      }));
-
-      return response.data;
-    } catch (error) {
-      console.error("Error updating user profile:", error.response?.data || error.message);
-      throw error.response?.data || { error: "Failed to update user profile" };
-    }
-  }, [authToken]);
-
-
-  const value = {
-    user,
-    authToken,
-    navigate,
-    registerInstitute,
-    loginInstituteUser,
-    completeProfile,
-    showdataEmailName,
-    showDataExceptEmailName,
-    updateProfileExceptEmailName,
-
   };
 
-  return <InstituteContext.Provider value={value}>{children}</InstituteContext.Provider>;
+  const getProfileDataWithoutEmailAndName = async () => {
+    if (!authToken) {
+      navigate("/");
+      return;
+    }
+    try {
+      const res = await axios.get(`${backendUrl}/api/institute/profile-details`);
+      return res.data.user;
+    } catch (error) {
+      console.error("Fetch profile error:", error.response?.data || error.message);
+      throw error.response?.data || { error: "Error fetching profile data" };
+    }
+  };
+
+  const updateProfileWithoutEmailAndName = async (updatedFields) => {
+    try {
+      const res = await axios.put(`${backendUrl}/api/institute/update-profile`, updatedFields);
+      return res.data.user;
+    } catch (error) {
+      console.error("Update profile error:", error.response?.data || error.message);
+      throw error.response?.data || { error: "Error updating profile" };
+    }
+  };
+
+  const updateApproxTimePerPerson = async (approxTimePerPerson) => {
+    try {
+      const res = await axios.put(`${backendUrl}/api/institute/update-approx-time`, {
+        approxTimePerPerson,
+      });
+      return res.data.user;
+    } catch (error) {
+      console.error("Update approxTimePerPerson error:", error.response?.data || error.message);
+      throw error.response?.data || { error: "Error updating approxTimePerPerson" };
+    }
+  };
+
+  // Show nothing (or a spinner) while checking token
+  if (loading) return null;
+
+  return (
+    <InstituteContext.Provider
+      value={{
+        user,
+        authToken,
+        registerInstitute,
+        loginInstituteUser,
+        completeProfile,
+        getEmailAndName,
+        getProfileDataWithoutEmailAndName,
+        updateProfileWithoutEmailAndName,
+        updateApproxTimePerPerson,
+      }}
+    >
+      {children}
+    </InstituteContext.Provider>
+  );
 };
 
 export default InstituteContextProvider;
